@@ -1,1 +1,631 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>My Closet — Catalog & Outfit Picker</title>
+  <style>
+    :root{
+      --bg:#0b0c10; --panel:#12131a; --muted:#1a1c25; --accent:#6ee7b7; --accent2:#93c5fd; --text:#e6e6e6; --sub:#aab; --shadow:0 10px 25px rgba(0,0,0,.35);
+      --radius:18px;
+    }
+    *{box-sizing:border-box}
+    html,body{height:100%}
+    body{margin:0;background:linear-gradient(180deg,var(--bg),#0e1118);color:var(--text);font-family:system-ui,-apple-system,Segoe UI,Roboto,Inter,Ubuntu,Helvetica,Arial,sans-serif;}
+    header{position:sticky;top:0;z-index:5;background:rgba(11,12,16,.9);backdrop-filter:blur(8px);border-bottom:1px solid #1c1f2b}
+    .wrap{max-width:1200px;margin:0 auto;padding:14px 18px;}
+    .brand{display:flex;align-items:center;gap:12px}
+    .badge{width:36px;height:36px;border-radius:10px;background:linear-gradient(135deg,var(--accent2),var(--accent));display:grid;place-items:center;color:#041014;font-weight:800;box-shadow:var(--shadow)}
+    .brand h1{font-size:18px;margin:0;letter-spacing:.5px}
+
+    .grid{display:grid;grid-template-columns:280px 1fr;gap:18px;padding:18px}
+    @media (max-width:960px){.grid{grid-template-columns:1fr}}
+
+    .card{background:linear-gradient(180deg,var(--panel),#0f1017);border:1px solid #1c1f2b;border-radius:var(--radius);box-shadow:var(--shadow)}
+    .card h2{margin:0 0 10px 0;font-size:16px;color:#dfe7ff}
+    .card .content{padding:16px}
+
+    label{display:block;font-size:12px;color:var(--sub);margin:10px 0 6px}
+    input[type="text"],select,textarea{width:100%;background:#0e1117;border:1px solid #2a2f40;color:var(--text);padding:10px 12px;border-radius:12px;outline:none}
+    textarea{min-height:68px;resize:vertical}
+    input[type="file"]{width:100%;}
+    .row{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+    .btn{display:inline-flex;align-items:center;gap:8px;background:linear-gradient(135deg,#1f2937,#0f172a);border:1px solid #2a2f40;color:#e7f5ff;padding:10px 14px;border-radius:12px;cursor:pointer;transition:.15s;box-shadow:0 2px 10px rgba(0,0,0,.2)}
+    .btn:hover{transform:translateY(-1px);border-color:#3b4157}
+    .btn.accent{background:linear-gradient(135deg,var(--accent2),var(--accent));color:#06141a;border:0;font-weight:700}
+    .btn.ghost{background:#0d0f15}
+    .btn.small{padding:6px 10px;border-radius:10px;font-size:12px}
+    .btn.danger{background:linear-gradient(135deg,#ef4444,#f59e0b);color:#111}
+
+    .toolbar{display:flex;flex-wrap:wrap;gap:8px}
+
+    .gallery{padding:16px;display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:14px}
+    .item{background:#0e1117;border:1px solid #20263a;border-radius:14px;overflow:hidden;display:flex;flex-direction:column}
+    .item .thumb{position:relative;aspect-ratio:1/1;background:#0b0d12;display:grid;place-items:center}
+    .item img{max-width:100%;max-height:100%;object-fit:contain}
+    .item .meta{padding:10px 12px;display:grid;gap:6px;font-size:12px;color:#c9d1e1}
+    .chip{display:inline-flex;align-items:center;gap:6px;background:#121622;border:1px solid #21273a;border-radius:999px;padding:4px 8px;font-size:11px;color:#cbd5e1}
+    .chip .dot{width:10px;height:10px;border-radius:50%}
+    .item .actions{display:flex;gap:8px;margin-top:8px}
+
+    .outfit-area{padding:12px;display:grid;gap:12px}
+    .slots{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:12px}
+    .slot{border:2px dashed #2b3147;border-radius:16px;min-height:180px;background:#0c0f16;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;padding:10px;transition:.15s}
+    .slot.dragover{border-color:var(--accent)}
+    .slot img{max-width:100%;max-height:130px;object-fit:contain}
+    .slot-title{font-size:12px;color:#8ea0c2;text-transform:uppercase;letter-spacing:.8px}
+
+    .saved-outfits{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:12px;padding:12px}
+    .outfit{background:#0e1117;border:1px solid #20263a;border-radius:14px;padding:12px;display:grid;gap:8px}
+    .outfit .thumbs{display:grid;grid-template-columns:repeat(5,1fr);gap:6px}
+    .outfit .thumbs div{background:#0b0d12;border:1px solid #1d2233;border-radius:8px;aspect-ratio:1/1;display:grid;place-items:center;overflow:hidden}
+    .outfit .thumbs img{max-width:100%;max-height:100%;object-fit:contain}
+
+    .notice{padding:10px 12px;background:#0d131d;border:1px solid #1c2740;border-radius:12px;color:#b7c6e8;font-size:13px}
+    .muted{color:#93a0b4;font-size:12px}
+    .hr{height:1px;background:#1b2133;margin:10px 0}
+    .footer{padding:12px;color:#8d96a8;text-align:center;font-size:12px}
+  </style>
+</head>
+<body>
+  <header>
+    <div class="wrap" style="display:flex;justify-content:space-between;align-items:center;gap:12px">
+      <div class="brand"><div class="badge">👗</div><h1>My Closet — Catalog & Outfit Picker</h1></div>
+      <div class="toolbar">
+        <button class="btn small ghost" id="exportBtn">Export data</button>
+        <label for="importFile" class="btn small ghost" title="Import a backup JSON file">Import data</label>
+        <input id="importFile" type="file" accept="application/json" style="display:none" />
+        <button class="btn small danger" id="resetBtn" title="This clears everything on this device">Reset</button>
+      </div>
+    </div>
+  </header>
+
+  <main class="grid">
+    <!-- SIDEBAR: Add / filter -->
+    <section class="card">
+      <div class="content">
+        <h2>Add clothing</h2>
+        <p class="muted">Images stay in your browser (Local Storage). For best results, add clear, square-ish photos on neutral backgrounds.</p>
+        <div class="hr"></div>
+        <label>Photos (PNG/JPG/WebP) — you can select multiple</label>
+        <input id="photoInput" type="file" accept="image/*" multiple />
+        <div class="row">
+          <div>
+            <label>Category</label>
+            <select id="category">
+              <option value="tops">Top</option>
+              <option value="bottoms">Bottom</option>
+              <option value="shoes">Shoes</option>
+              <option value="outerwear">Outerwear</option>
+              <option value="accessories">Accessory</option>
+            </select>
+          </div>
+          <div>
+            <label>Dominant color</label>
+            <input id="color" type="text" placeholder="e.g., black" />
+          </div>
+        </div>
+        <div class="row">
+          <div>
+            <label>Season</label>
+            <select id="season">
+              <option value="all">All-season</option>
+              <option value="spring">Spring</option>
+              <option value="summer">Summer</option>
+              <option value="fall">Fall</option>
+              <option value="winter">Winter</option>
+            </select>
+          </div>
+          <div>
+            <label>Label (optional)</label>
+            <input id="label" type="text" placeholder="e.g., blue tee, black jeans" />
+          </div>
+        </div>
+        <label>Notes (optional)</label>
+        <textarea id="notes" placeholder="brand, fabric, style, fit notes…"></textarea>
+        <div style="display:flex;gap:10px;align-items:center;margin-top:10px">
+          <button class="btn accent" id="addBtn">Add to catalog</button>
+          <span class="muted">Images are auto‑compressed to keep storage small.</span>
+        </div>
+
+        <div class="hr"></div>
+        <h2>Filter catalog</h2>
+        <div class="row">
+          <div>
+            <label>Category</label>
+            <select id="fCategory">
+              <option value="">Any</option>
+              <option value="tops">Top</option>
+              <option value="bottoms">Bottom</option>
+              <option value="shoes">Shoes</option>
+              <option value="outerwear">Outerwear</option>
+              <option value="accessories">Accessory</option>
+            </select>
+          </div>
+          <div>
+            <label>Season</label>
+            <select id="fSeason">
+              <option value="">Any</option>
+              <option value="spring">Spring</option>
+              <option value="summer">Summer</option>
+              <option value="fall">Fall</option>
+              <option value="winter">Winter</option>
+              <option value="all">All-season</option>
+            </select>
+          </div>
+        </div>
+        <div class="row">
+          <div>
+            <label>Color contains</label>
+            <input id="fColor" type="text" placeholder="e.g., black" />
+          </div>
+          <div>
+            <label>Search text</label>
+            <input id="fText" type="text" placeholder="label/notes" />
+          </div>
+        </div>
+        <div class="row">
+          <div>
+            <label>Sort</label>
+            <select id="fSort">
+              <option value="new">Newest</option>
+              <option value="old">Oldest</option>
+              <option value="az">A → Z</option>
+              <option value="za">Z → A</option>
+            </select>
+          </div>
+          <div style="display:flex;align-items:end">
+            <button id="clearFilters" class="btn small ghost" style="width:100%">Clear filters</button>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- MAIN: Gallery + Outfit Builder -->
+    <section class="card" style="overflow:hidden">
+      <div class="content" style="padding-bottom:0">
+        <h2>Your catalog</h2>
+        <p class="notice">Tip: Drag any item card into a slot below to build an outfit. Click an item to view/edit details. Right‑click an image to save it.
+        <br><span class="muted">Data lives only on this device. Use Export/Import to move it.</span></p>
+      </div>
+      <div id="gallery" class="gallery"></div>
+
+      <div class="content">
+        <div class="hr"></div>
+        <h2>Build an outfit</h2>
+        <div class="outfit-area">
+          <div class="row">
+            <div>
+              <label>Outfit name</label>
+              <input id="outfitName" type="text" placeholder="e.g., First day of school" />
+            </div>
+            <div style="display:flex;align-items:end;gap:8px">
+              <button class="btn" id="randomizeBtn" title="Use current filters to pick random items">Randomize</button>
+              <button class="btn accent" id="saveOutfitBtn">Save outfit</button>
+              <button class="btn ghost" id="clearOutfitBtn">Clear</button>
+            </div>
+          </div>
+
+          <div class="slots" id="slots">
+            <!-- slots injected -->
+          </div>
+        </div>
+        <div class="hr"></div>
+        <h2>Saved outfits</h2>
+        <div id="outfits" class="saved-outfits"></div>
+      </div>
+    </section>
+  </main>
+
+  <div class="footer">Made for you — runs 100% in your browser ✨</div>
+
+  <template id="itemTemplate">
+    <div class="item" draggable="true">
+      <div class="thumb"><img alt="Item" /></div>
+      <div class="meta">
+        <div class="chips" style="display:flex;flex-wrap:wrap;gap:6px"></div>
+        <div class="muted label"></div>
+        <div class="actions">
+          <button class="btn small ghost editBtn">Edit</button>
+          <button class="btn small ghost addToOutfitBtn">To outfit</button>
+          <button class="btn small danger deleteBtn">Delete</button>
+        </div>
+      </div>
+    </div>
+  </template>
+
+  <script>
+  (function(){
+    const MAX_IMG = 900; // px bounding box for compression
+    const QUALITY = 0.85; // JPEG/WebP quality
+
+    const $ = sel => document.querySelector(sel);
+    const $$ = sel => Array.from(document.querySelectorAll(sel));
+
+    const state = {
+      items: load('closet_items', []), // {id, dataUrl, cat, color, season, label, notes, addedAt}
+      outfits: load('closet_outfits', []), // {id, name, slots:{top,bottom,shoes,outerwear,accessory,extra[]}, createdAt}
+      currentSlots: emptySlots()
+    };
+
+    const slotOrder = [
+      {key:'tops', name:'Top'},
+      {key:'bottoms', name:'Bottom'},
+      {key:'shoes', name:'Shoes'},
+      {key:'outerwear', name:'Outerwear'},
+      {key:'accessories', name:'Accessory'},
+      {key:'extra', name:'Free slot'}
+    ];
+
+    function emptySlots(){
+      return {tops:null,bottoms:null,shoes:null,outerwear:null,accessories:null,extra:[]};
+    }
+
+    // ---- Storage helpers ----
+    function load(key, fallback){
+      try{ return JSON.parse(localStorage.getItem(key)) ?? fallback }catch{ return fallback }
+    }
+    function save(){
+      localStorage.setItem('closet_items', JSON.stringify(state.items));
+      localStorage.setItem('closet_outfits', JSON.stringify(state.outfits));
+    }
+
+    // ---- UI Elements ----
+    const photoInput = $('#photoInput');
+    $('#addBtn').addEventListener('click', onAddItems);
+    $('#clearFilters').addEventListener('click', ()=>{$('#fCategory').value='';$('#fSeason').value='';$('#fColor').value='';$('#fText').value='';$('#fSort').value='new'; render();});
+    ['fCategory','fSeason','fColor','fText','fSort'].forEach(id=> $("#"+id).addEventListener('input', render));
+
+    // Export/Import/Reset
+    $('#exportBtn').addEventListener('click', ()=>{
+      const blob = new Blob([JSON.stringify({items:state.items,outfits:state.outfits},null,2)], {type:'application/json'});
+      const url = URL.createObjectURL(blob);
+      const a = Object.assign(document.createElement('a'), {href:url, download:'my-closet-backup.json'});
+      document.body.appendChild(a); a.click(); a.remove(); URL.revokeObjectURL(url);
+    });
+    $('#importFile').addEventListener('change', async e=>{
+      const file = e.target.files?.[0]; if(!file) return;
+      const text = await file.text();
+      try{
+        const {items,outfits} = JSON.parse(text);
+        if(Array.isArray(items)) state.items = items;
+        if(Array.isArray(outfits)) state.outfits = outfits;
+        save(); render(); renderOutfits(); alert('Import complete!');
+      }catch(err){ alert('Invalid file.'); }
+      e.target.value='';
+    });
+    $('#resetBtn').addEventListener('click', ()=>{
+      if(confirm('This will erase your catalog and outfits on this device. Continue?')){
+        state.items=[]; state.outfits=[]; state.currentSlots = emptySlots(); save(); render(); renderSlots(); renderOutfits();
+      }
+    });
+
+    // Randomize outfit from filtered items
+    $('#randomizeBtn').addEventListener('click', ()=>{
+      const filtered = applyFilters(state.items);
+      const pick = cat => {
+        const list = filtered.filter(i=>i.cat===cat);
+        return list.length? list[Math.floor(Math.random()*list.length)].id : null;
+      };
+      state.currentSlots = emptySlots();
+      state.currentSlots.tops = pick('tops');
+      state.currentSlots.bottoms = pick('bottoms');
+      state.currentSlots.shoes = pick('shoes');
+      state.currentSlots.outerwear = pick('outerwear');
+      state.currentSlots.accessories = pick('accessories');
+      renderSlots();
+    });
+
+    $('#saveOutfitBtn').addEventListener('click', ()=>{
+      const name = $('#outfitName').value.trim() || `Outfit ${state.outfits.length+1}`;
+      const hasAny = Object.values(state.currentSlots).some(v=>Array.isArray(v)? v.length>0 : !!v);
+      if(!hasAny){ alert('Add at least one item to your outfit.'); return; }
+      state.outfits.unshift({id:id(), name, slots:structuredClone(state.currentSlots), createdAt:Date.now()});
+      save(); renderOutfits();
+      alert('Outfit saved!');
+    });
+    $('#clearOutfitBtn').addEventListener('click', ()=>{ state.currentSlots = emptySlots(); renderSlots(); });
+
+    // Build initial UI
+    render(); renderSlots(); renderOutfits();
+
+    // ---- Add items ----
+    async function onAddItems(){
+      const files = Array.from(photoInput.files||[]);
+      if(files.length===0){ alert('Choose at least one image.'); return; }
+      const base = {
+        cat: $('#category').value,
+        color: ($('#color').value||'').trim(),
+        season: $('#season').value,
+        label: ($('#label').value||'').trim(),
+        notes: ($('#notes').value||'').trim()
+      };
+      for(const file of files){
+        const dataUrl = await compressImage(file, MAX_IMG, QUALITY);
+        state.items.unshift({ id:id(), dataUrl, ...base, addedAt: Date.now() });
+      }
+      save();
+      // reset inputs (keep metadata)
+      photoInput.value=''; render();
+    }
+
+    // ---- Image compression ----
+    function compressImage(file, maxSize=900, quality=0.85){
+      return new Promise((resolve,reject)=>{
+        const img = new Image();
+        img.onload = ()=>{
+          const [w,h] = [img.naturalWidth, img.naturalHeight];
+          const scale = Math.min(1, maxSize/Math.max(w,h));
+          const cw = Math.round(w*scale), ch = Math.round(h*scale);
+          const canvas = document.createElement('canvas');
+          canvas.width=cw; canvas.height=ch;
+          const ctx = canvas.getContext('2d');
+          ctx.fillStyle = '#ffffff'; // background for JPEGs
+          ctx.fillRect(0,0,cw,ch);
+          ctx.drawImage(img,0,0,cw,ch);
+          const mime = file.type.includes('png')? 'image/png' : (file.type.includes('webp')? 'image/webp' : 'image/jpeg');
+          const out = canvas.toDataURL(mime, quality);
+          resolve(out);
+        };
+        img.onerror = reject;
+        const fr = new FileReader();
+        fr.onload = ()=>{ img.src = fr.result; };
+        fr.readAsDataURL(file);
+      });
+    }
+
+    // ---- Rendering ----
+    function render(){
+      const gallery = $('#gallery');
+      gallery.innerHTML='';
+      const items = applyFilters(state.items);
+      for(const item of items){
+        const node = itemCard(item);
+        gallery.appendChild(node);
+      }
+      if(items.length===0){
+        const empty = document.createElement('div');
+        empty.className='content';
+        empty.innerHTML = `<div class="notice">No items match. Add photos on the left, or tweak your filters.</div>`;
+        gallery.appendChild(empty);
+      }
+    }
+
+    function applyFilters(items){
+      const cat = $('#fCategory').value;
+      const season = $('#fSeason').value;
+      const color = ($('#fColor').value||'').toLowerCase();
+      const text = ($('#fText').value||'').toLowerCase();
+      const sort = $('#fSort').value;
+      let out = items.filter(i=>
+        (!cat || i.cat===cat) &&
+        (!season || i.season===season) &&
+        (!color || (i.color||'').toLowerCase().includes(color)) &&
+        (!text || ((i.label||'').toLowerCase().includes(text) || (i.notes||'').toLowerCase().includes(text)))
+      );
+      if(sort==='new') out.sort((a,b)=>b.addedAt-a.addedAt);
+      if(sort==='old') out.sort((a,b)=>a.addedAt-b.addedAt);
+      if(sort==='az') out.sort((a,b)=>(a.label||'').localeCompare(b.label||''));
+      if(sort==='za') out.sort((a,b)=>(b.label||'').localeCompare(a.label||''));
+      return out;
+    }
+
+    function itemCard(item){
+      const tpl = document.getElementById('itemTemplate');
+      const node = tpl.content.firstElementChild.cloneNode(true);
+      const img = node.querySelector('img'); img.src = item.dataUrl; img.alt = item.label||item.cat;
+      // chips
+      const chips = node.querySelector('.chips');
+      chips.appendChild(chip(capitalize(item.cat)));
+      chips.appendChild(chip(capitalize(item.season)));
+      if(item.color) chips.appendChild(colorChip(item.color));
+      // label
+      node.querySelector('.label').textContent = item.label || '—';
+
+      // drag
+      node.addEventListener('dragstart', ev=>{
+        ev.dataTransfer.setData('text/plain', item.id);
+        ev.dataTransfer.effectAllowed = 'copy';
+      });
+
+      // edit
+      node.querySelector('.editBtn').addEventListener('click', ()=> editItem(item.id));
+      node.querySelector('.deleteBtn').addEventListener('click', ()=> deleteItem(item.id));
+      node.querySelector('.addToOutfitBtn').addEventListener('click', ()=>{
+        // add to first empty slot of same category, else push to extra
+        if(item.cat in state.currentSlots && !Array.isArray(state.currentSlots[item.cat]) && !state.currentSlots[item.cat]){
+          state.currentSlots[item.cat] = item.id;
+        } else {
+          state.currentSlots.extra.push(item.id);
+        }
+        renderSlots();
+      });
+
+      // click to quick view
+      node.querySelector('.thumb').addEventListener('click', ()=> viewItem(item.id));
+
+      return node;
+    }
+
+    function chip(text){
+      const el = document.createElement('span');
+      el.className='chip'; el.textContent = text; return el;
+    }
+    function colorChip(name){
+      const el = document.createElement('span');
+      el.className='chip';
+      const dot = document.createElement('span'); dot.className='dot'; dot.style.background = guessColor(name);
+      const t = document.createElement('span'); t.textContent = name;
+      el.appendChild(dot); el.appendChild(t); return el;
+    }
+
+    function guessColor(name){
+      const m = name?.toLowerCase()||'';
+      const map = {black:'#111', white:'#eee', gray:'#777', grey:'#777', red:'#ef4444', blue:'#3b82f6', green:'#22c55e', yellow:'#eab308', orange:'#f97316', purple:'#a855f7', pink:'#ec4899', brown:'#8b5e34', beige:'#d6c2a1', cream:'#efe7da', navy:'#1e3a8a', teal:'#14b8a6'};
+      for(const k in map){ if(m.includes(k)) return map[k]; }
+      return '#8892b0';
+    }
+
+    // ---- Edit / View / Delete ----
+    function viewItem(idVal){
+      const it = state.items.find(x=>x.id===idVal); if(!it) return;
+      const w = window.open('', '_blank', 'width=420,height=520');
+      w.document.write(`<title>${(it.label||'Item')}</title>`);
+      w.document.body.style = 'margin:0;background:#0b0c10;color:#e6e6e6;font-family:system-ui;';
+      w.document.body.innerHTML = `
+        <div style="padding:10px;display:grid;gap:10px">
+          <img src="${it.dataUrl}" alt="item" style="max-width:100%;max-height:60vh;object-fit:contain;background:#0e1117;border:1px solid #222;border-radius:12px"/>
+          <div style="font-size:14px;line-height:1.5">
+            <div><b>Label:</b> ${escapeHtml(it.label||'—')}</div>
+            <div><b>Category:</b> ${escapeHtml(it.cat)}</div>
+            <div><b>Color:</b> ${escapeHtml(it.color||'—')}</div>
+            <div><b>Season:</b> ${escapeHtml(it.season)}</div>
+            <div><b>Notes:</b> ${escapeHtml(it.notes||'—')}</div>
+          </div>
+        </div>`;
+    }
+
+    function editItem(idVal){
+      const it = state.items.find(x=>x.id===idVal); if(!it) return;
+      const label = prompt('Label', it.label||''); if(label===null) return;
+      const color = prompt('Color', it.color||''); if(color===null) return;
+      const season = prompt('Season (spring/summer/fall/winter/all)', it.season||'all'); if(season===null) return;
+      const cat = prompt('Category (tops/bottoms/shoes/outerwear/accessories)', it.cat); if(cat===null) return;
+      const notes = prompt('Notes', it.notes||''); if(notes===null) return;
+      Object.assign(it,{label,color,season,cat,notes}); save(); render(); renderSlots();
+    }
+
+    function deleteItem(idVal){
+      if(!confirm('Delete this item?')) return;
+      state.items = state.items.filter(x=>x.id!==idVal);
+      // also remove from current outfit and saved outfits
+      for(const key of ['tops','bottoms','shoes','outerwear','accessories']){
+        if(state.currentSlots[key]===idVal) state.currentSlots[key]=null;
+      }
+      state.currentSlots.extra = state.currentSlots.extra.filter(x=>x!==idVal);
+      state.outfits = state.outfits.map(o=>({
+        ...o,
+        slots:{
+          ...o.slots,
+          tops:o.slots.tops===idVal?null:o.slots.tops,
+          bottoms:o.slots.bottoms===idVal?null:o.slots.bottoms,
+          shoes:o.slots.shoes===idVal?null:o.slots.shoes,
+          outerwear:o.slots.outerwear===idVal?null:o.slots.outerwear,
+          accessories:o.slots.accessories===idVal?null:o.slots.accessories,
+          extra:o.slots.extra.filter(x=>x!==idVal)
+        }
+      }));
+      save(); render(); renderSlots(); renderOutfits();
+    }
+
+    // ---- Outfit slots ----
+    function renderSlots(){
+      const wrap = $('#slots'); wrap.innerHTML='';
+      for(const s of slotOrder){
+        const slot = document.createElement('div');
+        slot.className='slot'; slot.dataset.slot = s.key;
+        slot.innerHTML = `<div class="slot-title">${s.name}</div>`;
+        slot.addEventListener('dragover', (e)=>{ e.preventDefault(); slot.classList.add('dragover'); });
+        slot.addEventListener('dragleave', ()=> slot.classList.remove('dragover'));
+        slot.addEventListener('drop', (e)=>{ e.preventDefault(); slot.classList.remove('dragover'); const idVal = e.dataTransfer.getData('text/plain'); addToSlot(s.key,idVal); });
+        // show content
+        const content = document.createElement('div'); content.style.display='grid'; content.style.justifyItems='center'; content.style.gap='8px'; content.style.width='100%';
+        if(s.key==='extra'){
+          const ids = state.currentSlots.extra;
+          if(ids.length===0){ content.appendChild(emptyCell()); }
+          else{
+            const row = document.createElement('div'); row.style.display='grid'; row.style.gridTemplateColumns='repeat(auto-fill,minmax(80px,1fr))'; row.style.gap='8px'; row.style.width='100%';
+            for(const idVal of ids){ row.appendChild(slotThumb(idVal,'extra')); }
+            content.appendChild(row);
+          }
+        } else {
+          const idVal = state.currentSlots[s.key];
+          if(!idVal){ content.appendChild(emptyCell()); }
+          else{ content.appendChild(slotThumb(idVal, s.key)); }
+        }
+        slot.appendChild(content);
+        wrap.appendChild(slot);
+      }
+    }
+
+    function emptyCell(){
+      const d=document.createElement('div'); d.className='muted'; d.textContent='Drop item here'; return d;
+    }
+
+    function slotThumb(idVal, key){
+      const it = state.items.find(x=>x.id===idVal); if(!it){ const d=document.createElement('div'); d.textContent='(missing)'; return d; }
+      const cell = document.createElement('div'); cell.style.display='grid'; cell.style.placeItems='center'; cell.style.gap='6px';
+      const box = document.createElement('div'); box.style.background='#0e1117'; box.style.border='1px solid #1d2233'; box.style.borderRadius='10px'; box.style.padding='6px'; box.style.display='grid'; box.style.placeItems='center';
+      const img = document.createElement('img'); img.src = it.dataUrl; img.alt = it.label||it.cat; img.style.maxWidth='120px'; img.style.maxHeight='120px';
+      box.appendChild(img); cell.appendChild(box);
+      const row = document.createElement('div'); row.style.display='flex'; row.style.gap='6px';
+      const viewB = button('View',()=>viewItem(it.id));
+      const rmB = button('Remove',()=>{
+        if(key==='extra'){ state.currentSlots.extra = state.currentSlots.extra.filter(x=>x!==idVal); }
+        else { state.currentSlots[key] = null; }
+        renderSlots();
+      });
+      row.append(viewB, rmB); cell.appendChild(row);
+      return cell;
+    }
+
+    function addToSlot(key,idVal){
+      const exists = state.items.some(x=>x.id===idVal); if(!exists) return;
+      if(key==='extra'){ state.currentSlots.extra.push(idVal); }
+      else { state.currentSlots[key] = idVal; }
+      renderSlots();
+    }
+
+    // ---- Saved outfits list ----
+    function renderOutfits(){
+      const wrap = $('#outfits'); wrap.innerHTML='';
+      for(const o of state.outfits){
+        const card = document.createElement('div'); card.className='outfit';
+        const title = document.createElement('div'); title.innerHTML = `<b>${escapeHtml(o.name)}</b><div class="muted">${new Date(o.createdAt).toLocaleString()}</div>`;
+        const thumbs = document.createElement('div'); thumbs.className='thumbs';
+        const ids = [o.slots.tops,o.slots.bottoms,o.slots.shoes,o.slots.outerwear,o.slots.accessories, ...o.slots.extra];
+        for(const idVal of ids){
+          const box = document.createElement('div');
+          if(idVal){ const it = state.items.find(x=>x.id===idVal); if(it){ const img = document.createElement('img'); img.src=it.dataUrl; img.alt=it.label||it.cat; box.appendChild(img);} }
+          thumbs.appendChild(box);
+        }
+        const actions = document.createElement('div'); actions.style.display='flex'; actions.style.gap='8px';
+        actions.appendChild(button('Load',()=>{ state.currentSlots = structuredClone(o.slots); $('#outfitName').value = o.name; renderSlots(); window.scrollTo({top:0,behavior:'smooth'}); }));
+        actions.appendChild(button('Rename',()=>{ const name = prompt('New outfit name', o.name); if(name){ o.name=name; save(); renderOutfits(); }}));
+        actions.appendChild(button('Delete',()=>{ if(confirm('Delete this outfit?')){ state.outfits = state.outfits.filter(x=>x.id!==o.id); save(); renderOutfits(); }}));
+        card.append(title, thumbs, actions);
+        wrap.appendChild(card);
+      }
+      if(state.outfits.length===0){
+        const empty=document.createElement('div'); empty.className='content'; empty.innerHTML='<div class="notice">No saved outfits yet.</div>'; wrap.appendChild(empty);
+      }
+    }
+
+    // ---- utils ----
+    function button(text, onClick){ const b=document.createElement('button'); b.className='btn small ghost'; b.textContent=text; b.addEventListener('click',onClick); return b; }
+    function id(){ return Math.random().toString(36).slice(2)+Date.now().toString(36); }
+    function capitalize(s){ return (s||'').slice(0,1).toUpperCase()+ (s||'').slice(1); }
+    function escapeHtml(s){ return (s||'').replace(/[&<>"']/g, c=>({"&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;","'":"&#39;"}[c])); }
+
+  })();
+  </script>
+
+  <!--
+  ===================== HOW TO USE IN GOOGLE SITES =====================
+  Option A (quick):
+    1) Save this file as closet.html on your computer.
+    2) Upload closet.html to Google Drive. Right‑click → Share → Anyone with the link (Viewer).
+    3) In Google Sites: Insert → Embed → Drive → pick closet.html → Insert.
+
+  Option B (local/standalone):
+    - Double‑click the HTML file to open it in your browser. It will work offline. Data is saved in your browser only.
+
+  Notes:
+    • To move data to another device/browser, use Export / Import at the top.
+    • Images are stored as compressed data URLs in Local Storage.
+    • No server needed. All client‑side JavaScript only.
+  =====================================================================
+  -->
+</body>
+</html>
 
